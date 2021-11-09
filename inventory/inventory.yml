@@ -1,0 +1,364 @@
+all:
+  vars:
+    ##################################
+    # Assisted Install Configuration #
+    ##################################
+    # These options configure Assisted Installer and the resulting cluster
+    # https://generator.swagger.io/?url=https://raw.githubusercontent.com/openshift/assisted-service/58a6abd5c99d4e41d939be89cd0962433849a861/swagger.yaml
+    # See section: cluster-create-params
+    ai_version: v1.0.24.2
+    assisted_service_openshift_versions:
+        "4.6":
+          display_name: 4.6.16
+          release_image: quay.io/openshift-release-dev/ocp-release:4.6.16-x86_64
+          release_version: 4.6.16
+          rhcos_image: https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.6/4.6.8/rhcos-4.6.8-x86_64-live.x86_64.iso
+          rhcos_rootfs: https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.6/4.6.8/rhcos-live-rootfs.x86_64.img
+          rhcos_version: 46.82.202012051820-0
+          support_level: production
+        "4.7":
+          display_name: 4.7.28
+          release_image: quay.io/openshift-release-dev/ocp-release:4.7.28-x86_64
+          release_version: 4.7.28
+          rhcos_image: https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.7/4.7.13/rhcos-4.7.13-x86_64-live.x86_64.iso
+          rhcos_rootfs: https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.7/4.7.13/rhcos-live-rootfs.x86_64.img
+          rhcos_version: 47.83.202105220305-0
+          support_level: production
+        "4.8":
+          default: true
+          display_name: 4.8.12
+          release_image: quay.io/openshift-release-dev/ocp-release:4.8.12-x86_64
+          release_version: 4.8.12
+          rhcos_image: https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.8/4.8.2/rhcos-4.8.2-x86_64-live.x86_64.iso
+          rhcos_rootfs: https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.8/4.8.2/rhcos-live-rootfs.x86_64.img
+          rhcos_version: 48.84.202109100857-0
+          support_level: production
+        "4.9":
+          display_name: 4.9.1
+          release_image: quay.io/openshift-release-dev/ocp-release:4.9.1-x86_64
+          release_version: 4.9.1
+          rhcos_image: https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.9/4.9.0/rhcos-4.9.0-x86_64-live.x86_64.iso
+          rhcos_rootfs: https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.9/4.9.0/rhcos-live-rootfs.x86_64.img
+          rhcos_version: 49.84.202110081407-0
+          support_level: production
+    # Cluster name and dns domain combine to give the cluster namespace that will contain OpenShift endpoints
+    # e.g. api.pool5.roskosb.info, worker.mgmtroskosb.info
+    cluster_name: mgmt
+    base_dns_domain: pool5.roskosb.info
+
+    # OpenShift version
+    openshift_full_version: 4.8.12
+
+    # Virtual IP addresses used to access the resulting OpenShift cluster
+    api_vip: 10.1.198.131 # the IP address to be used for api.ocp.pool5.roskosb.info and api-int.ocp.pool5.roskosb.info
+    ingress_vip: 10.1.198.132 # the IP address to be used for *.apps.ocp.pool5.roskosb.info
+
+    ## Allocate virtual IPs via DHCP server. Equivalent to the vip_dhcp_allocation configuration option of Assisted Installer
+    vip_dhcp_allocation: false
+
+    # The subnet on which all nodes are (or will be) accessible.
+    machine_network_cidr: 10.1.198.128/28
+
+    # The IP address pool to use for service IP addresses
+    service_network_cidr: 172.30.0.0/16
+
+    # Cluster network settings. You are unlikely to need to change these
+    cluster_network_cidr: 10.128.0.0/14 # The subnet, internal to the cluster, on which pods will be assigned IPs
+    cluster_network_host_prefix: 23 # The subnet prefix length to assign to each individual node.
+
+    # # Cluster network provider. Cannot be changed after cluster is created.
+    # # The default is OpenShift SDN unless otherwise specified.
+    # network_type: OVNKubernetes
+    # network_type: OpenShiftSDN
+
+    ######################################
+    # Prerequisite Service Configuration #
+    ######################################
+
+    # Flags to enable/disable prerequisite service setup
+    # You will need to ensure alternatives are available for anything that will not be automatically set up
+    setup_ntp_service: false
+    setup_dns_service: false
+    setup_registry_service: false # Only required for a Restricted Network installation
+    setup_http_store_service: true
+
+
+
+    # NTP Service
+    # ntp_server is the address at which the NTP service is (or will be) available
+    ntp_server: clock.corp.redhat.com
+    # ntp_server_allow is the range of IPs the NTP service will respond to
+    # ntp_server_allow: 10.40.0.0/24 # not required if setup_ntp_service is false
+
+
+    # Mirror Registry Service parameters for a Restricted Network installation
+
+    # use_local_mirror_registry controls if the install process uses a local container registry (mirror_registry) or not.
+    # Set this to true to use the mirror registry service set up when `setup_registry_service` is true.
+    use_local_mirror_registry: false
+
+    # HTTP Store Configuration
+    # ISO name must include the `discovery` directory if you have a SuperMicro machine
+    discovery_iso_name: "discovery/discovery-image.iso"
+
+    # discovery_iso_server must be discoverable from all BMCs in order for them to mount the ISO hosted there.
+    # It is usually necessary to specify different values for KVM nodes and/or physical BMCs if they are on different subnets.
+    discovery_iso_server: "http://{{ hostvars['http_store']['ansible_host'] }}"
+
+    ############################
+    # Local File Configuration #
+    ############################
+
+    repo_root_path: /home/broskos/src/github/pool5-crucible # path to repository root
+
+    # Directory in which created/updated artifacts are placed
+    fetched_dest: "{{ repo_root_path }}/fetched"
+
+    # Configure possible paths for the pull secret
+    # first one found will be used
+    # note: paths should be absolute
+    pull_secret_lookup_paths:
+      - "{{ fetched_dest }}/pull-secret.txt"
+      - "{{ repo_root_path }}/pull-secret.txt"
+
+    # Configure possible paths for the ssh public key used for debugging
+    # first one found will be used
+    # note: paths should be absolute
+    ssh_public_key_lookup_paths:
+      - "{{ fetched_dest }}/ssh_keys/{{ cluster_name }}.pub"
+      - "{{ repo_root_path }}/ssh_public_key.pub"
+      - ~/.ssh/id_rsa.pub
+
+    # Set the base directory to store ssh keys
+    ssh_key_dest_base_dir: /home/broskos/src/github/homelab-crucible
+
+    # The retrieved cluster kubeconfig will be placed on the bastion host at the following location
+    kubeconfig_dest_dir: /home/broskos/
+    kubeconfig_dest_filename: "{{ cluster_name }}-kubeconfig"
+
+    ############################
+    #    LOGIC: DO NOT TOUCH   #
+    # vvvvvvvvvvvvvvvvvvvvvvvv #
+    ############################
+
+    # pull secret logic, no need to change. Configure above
+    local_pull_secret_path: "{{ lookup('first_found', pull_secret_lookup_paths) }}"
+    pull_secret: "{{ lookup('file', local_pull_secret_path) }}"
+
+    # ssh key logic, no need to change. Configure above
+    local_ssh_public_key_path: "{{ lookup('first_found', ssh_public_key_lookup_paths) }}"
+    ssh_public_key: "{{ lookup('file', local_ssh_public_key_path) }}"
+
+    # provided mirror certificate logic, no need to change.
+    local_mirror_certificate_path: "{{ (setup_registry_service == true) | ternary(fetched_dest + '/domain.crt',  repo_root_path + '/mirror_certificate.txt') }}"
+    mirror_certificate: "{{ lookup('file', local_mirror_certificate_path) }}"
+
+    openshift_version: "{{ openshift_full_version.split('.')[:2] | join('.') }}"
+
+    ############################
+    # ^^^^^^^^^^^^^^^^^^^^^^^^ #
+    #    LOGIC: DO NOT TOUCH   #
+    ############################
+
+
+  children:
+    bastions: # n.b. Currently only a single bastion is supported
+      hosts:
+        bastion:
+          ansible_host: localhost # Must be reachable from the Ansible control node
+
+    # Configuration and access information for the pre-requisite services
+    # TODO: document differences needed for already-deployed and auto-deployed
+    services:
+      hosts:
+        assisted_installer:
+          ansible_host: service-vm.pool5.roskosb.info
+          host: service-vm.pool5.roskosb.info
+          port: 8090 # Do not change
+
+        registry_host:
+          ansible_host: service-vm.pool5.roskosb.info
+          registry_port: 5000
+          registry_fqdn: registry.pool5.roskosb.info # use in case of different FQDN for the cert
+          cert_common_name: "{{ registry_fqdn }}"
+          cert_country: US
+          cert_locality: Raleigh
+          cert_organization: Red Hat, Inc.
+          cert_organizational_unit: Lab
+          cert_state: NC
+
+          # Configure the following secret values in the inventory.vault.yml file
+          REGISTRY_HTTP_SECRET: "{{ VAULT_REGISTRY_HOST_REGISTRY_HTTP_SECRET | mandatory }}"
+          disconnected_registry_user: "{{ VAULT_REGISTRY_HOST_DISCONNECTED_REGISTRY_USER | mandatory }}"
+          disconnected_registry_password: "{{ VAULT_REGISTRY_HOST_DISCONNECTED_REGISTRY_PASSWORD | mandatory }}"
+
+          # # registry_container_image defaults to docker.io/library/registry:2
+          # # Note that docker.io may rate-limit heavy users. Use this to provide your own image.
+          # registry_container_image: quay.io/example/registry:latest
+
+        dns_host:
+          ansible_host: service-vm.pool5.roskosb.info
+          write_dnsmasq_config: false # Set to false if there is already dns setup
+          dns_service_name: dnsmasq
+#          use_dhcp: true
+#          dhcp_range_first: 192.168.201.96
+#          dhcp_range_last: 192.168.201.130
+#          ntp_server: 192.168.2.105
+#          gateway: 10.1.198.142
+#          prefix: 24
+
+        http_store:
+          ansible_host: service-vm.pool5.roskosb.info
+
+#        ntp_host:
+#          ansible_host: clock.corp.redhat.com
+
+        vm_host: # Required for using "KVM" nodes, ignored if not.
+          ansible_user: root
+          ansible_host: 10.1.198.129
+          host_ip_keyword: ansible_host # the varname in the KVM node hostvars which contains the *IP* of the VM
+          images_dir: /var/lib/libvirt/images # directory where qcow images will be placed.
+          vm_bridge_ip: 10.1.198.129 # IP for the bridge between VMs and machine network
+          vm_bridge_interface: eno2.308 # Interface to be connected to the bridge. DO NOT use your primary interface.
+          bridge_name: br-ex
+          network_name: external
+          SETUP_VM_BRIDGE: false
+          dns: 10.1.196.1 # DNS used by the bridge
+          cert_common_name: "pool5-infra1.practice.redhat.com"
+          cert_country: US
+          cert_locality: Raleigh
+          cert_organization: Red Hat, Inc.
+          cert_organizational_unit: Lab
+          cert_state: NC
+
+    # Describe the desired cluster members
+    nodes:
+      # A minimum of three master nodes are required. More are supported.
+      # Worker nodes are not required, but if present there must be two or more.
+
+      # Node Required Vars:
+      # - role
+      #     - Must be either "master" or "worker", and must match the group
+
+      # - mac
+      #     - The MAC address of the node, used as a hardware identifier by Assisted Installer.
+      #     - The value set here will be used when creating VMs and must be unique within the network.
+
+      # - vendor
+      #     - One of "Dell", "HPE", "Lenovo", "SuperMicro", "KVM" as the supported BMC APIs.
+      #     - "KVM" identifies a node as a VM to be created. If a "KVM" node is present,
+      #       then a "vm_host" must be defined in the "services" group.
+
+      # - bmc_address
+      # - bmc_user
+      # - bmc_password
+      #     - details for the BMC that controls the node.
+      #     - Must be set to the vm_host for "KVM" nodes.
+
+      # Static IP Vars:
+      # - ip
+      #     - defaults to "dhcp"
+      #     - Either the static IP to be set for the node, or "dhcp"
+      #     - If a static IP is set then "mask", "gateway", "dns" MUST also be set for the node
+
+      # - dns
+      #     - IP of the DNS server to be configured for static IP
+
+      # - gateway
+      #     - IP of the gateway to be configured for static IP
+
+      # - mask
+      #     - Length of subnet mask (e.g. 24) to be configured for static IP
+
+      # - vm_spec
+      #     - Specifications for the node:
+      #          - cpu_cores
+      #          - ram_mib
+      #          - disk_size_gb
+
+      # Optional Vars:
+      # - installation_disk_path
+      #     - The value set here will be used by Assisted Installer as the installation disk device
+      #       for a given host.
+      #     - The value must be a path to the disk device, e.g. /dev/sda
+      #     - If not specified, Assisted Installer will pick the first enumerated disk device for a
+      #       given host.
+      vars:
+        # Set the login information for any BMCs. Note that these will be SET on the vm_host virtual BMC.
+        bmc_user: "{{ VAULT_NODES_BMC_USER | mandatory }}"
+        bmc_password: "{{ VAULT_NODES_BMC_PASSWORD | mandatory }}"
+        dns1: 10.1.196.1
+        gateway: 10.1.198.142
+        mask: 28
+        network_config:
+          interfaces:
+            - name: enp1s0
+              type: ethernet
+              mac: "{{ mac }}"
+              state: up
+              addresses:
+                ipv4:
+                  - ip: "{{ ip }}"
+                    prefix: "{{ mask }}"
+          dns_server_ips:
+            - "{{ dns1 }}"
+          routes:
+            - destination: 0.0.0.0/0
+              address: "{{ gateway }}"
+              interface: enp1s0
+      children:
+        masters:
+          vars:
+            role: master
+            vendor: KVM # this example is a virtual control plane
+            bmc_address: "infra.pool5.roskosb.info:8082" # port can be changed using sushy_tools_port on the vm_host
+            vm_spec:
+              cpu_cores: 6
+              ram_mib: 20480
+              disk_size_gb: 40
+          hosts:
+            super1:
+              ansible_host: 10.1.198.133
+              mac: "DE:AD:BE:EF:C0:2C"
+              ip: 10.1.198.133
+
+              # # Uncomment to set custom BMC credentials for the node
+              # # These variables must be set in the inventory.vault.yml file
+              # bmc_user: "{{ VAULT_NODES_SUPER1_BMC_USER | mandatory }}"
+              # bmc_password: "{{ VAULT_NODES_SUPER1_BMC_PASSWORD | mandatory }}"
+
+            super2:
+              ansible_host: 10.1.198.134
+              mac: "DE:AD:BE:EF:C0:2D"
+              ip: 10.1.198.134
+
+            super3:
+              ansible_host: 10.1.198.135
+              mac: "DE:AD:BE:EF:C0:2E"
+              ip: 10.1.198.135
+
+#        workers:
+#          vars:
+#            role: worker
+#            vendor: Dell # This example uses baremetal worker nodes
+#          hosts:
+#            worker1:
+#              ansible_host: 192.168.201.104
+#              bmc_address: 172.28.11.25
+#              mac: 3C:FD:FE:78:AB:03
+
+              # # Uncomment to set custom BMC credentials for the node
+              # # These variables must be set in the inventory.vault.yml file
+              # bmc_user: "{{ VAULT_NODES_WORKER1_BMC_USER | mandatory }}"
+              # bmc_password: "{{ VAULT_NODES_WORKER1_BMC_PASSWORD | mandatory }}"
+
+              # # Uncomment to set an alternate installation disk device for the node
+              # installation_disk_path: /dev/sdb
+
+#            worker2:
+#              ansible_host: 192.168.201.105
+#              bmc_address: 172.28.11.26
+#              mac: 3C:FD:FE:78:AB:04
+
+              # # Uncomment to set an alternate installation disk device for the node
+              # installation_disk_path: /dev/sdb
