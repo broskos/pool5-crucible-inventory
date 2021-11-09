@@ -313,9 +313,9 @@ all:
             vendor: KVM # this example is a virtual control plane
             bmc_address: "infra.pool5.roskosb.info:8082" # port can be changed using sushy_tools_port on the vm_host
             vm_spec:
-              cpu_cores: 6
+              cpu_cores: 8
               ram_mib: 20480
-              disk_size_gb: 40
+              disk_size_gb: 50
           hosts:
             super1:
               ansible_host: 10.1.198.133
