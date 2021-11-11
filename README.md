@@ -59,7 +59,7 @@ ssh root@infra.pool5.roskosb.info
 qemu-img create -f qcow2 /var/lib/libvirt/images/crucible/data1.qcow2 100G
 qemu-img create -f qcow2 /var/lib/libvirt/images/crucible/data2.qcow2 100G
 qemu-img create -f qcow2 /var/lib/libvirt/images/crucible/data3.qcow2 100G
-chown qemu.qemu /var/lib/libvirt/images/data*
+chown qemu.qemu /var/lib/libvirt/images/crucible/data*
 virsh attach-disk super1 /var/lib/libvirt/images/crucible/data1.qcow2 --target vdb --persistent --subdriver qcow2
 virsh attach-disk super2 /var/lib/libvirt/images/crucible/data2.qcow2 --target vdb --persistent --subdriver qcow2
 virsh attach-disk super3 /var/lib/libvirt/images/crucible/data3.qcow2 --target vdb --persistent --subdriver qcow2

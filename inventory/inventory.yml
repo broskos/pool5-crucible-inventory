@@ -227,7 +227,7 @@ all:
           bridge_name: br-ex
           network_name: external
           SETUP_VM_BRIDGE: false
-          dns: 10.1.196.1 # DNS used by the bridge
+          dns: 10.11.142.1 # DNS used by the bridge
           cert_common_name: "pool5-infra1.practice.redhat.com"
           cert_country: US
           cert_locality: Raleigh
