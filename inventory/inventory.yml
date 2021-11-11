@@ -174,10 +174,12 @@ all:
         assisted_installer:
           ansible_host: service-vm.pool5.roskosb.info
           host: service-vm.pool5.roskosb.info
+          ansible_user: root
           port: 8090 # Do not change
 
         registry_host:
           ansible_host: service-vm.pool5.roskosb.info
+          ansible_user: root
           registry_port: 5000
           registry_fqdn: registry.pool5.roskosb.info # use in case of different FQDN for the cert
           cert_common_name: "{{ registry_fqdn }}"
@@ -198,6 +200,7 @@ all:
 
         dns_host:
           ansible_host: service-vm.pool5.roskosb.info
+          ansible_user: root
           write_dnsmasq_config: false # Set to false if there is already dns setup
           dns_service_name: dnsmasq
 #          use_dhcp: true
@@ -209,6 +212,7 @@ all:
 
         http_store:
           ansible_host: service-vm.pool5.roskosb.info
+          ansible_user: root
 
 #        ntp_host:
 #          ansible_host: clock.corp.redhat.com
@@ -217,7 +221,7 @@ all:
           ansible_user: root
           ansible_host: 10.1.198.129
           host_ip_keyword: ansible_host # the varname in the KVM node hostvars which contains the *IP* of the VM
-          images_dir: /var/lib/libvirt/images # directory where qcow images will be placed.
+          images_dir: /var/lib/libvirt/images/crucible # directory where qcow images will be placed.
           vm_bridge_ip: 10.1.198.129 # IP for the bridge between VMs and machine network
           vm_bridge_interface: eno2.308 # Interface to be connected to the bridge. DO NOT use your primary interface.
           bridge_name: br-ex
@@ -313,8 +317,8 @@ all:
             vendor: KVM # this example is a virtual control plane
             bmc_address: "infra.pool5.roskosb.info:8082" # port can be changed using sushy_tools_port on the vm_host
             vm_spec:
-              cpu_cores: 8
-              ram_mib: 20480
+              cpu_cores: 12
+              ram_mib: 32768
               disk_size_gb: 50
           hosts:
             super1:

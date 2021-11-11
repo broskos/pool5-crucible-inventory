@@ -10,7 +10,6 @@ cd /var/lib/libvirt/images
 qemu-img create -f qcow2 service-vm.qcow2 200G
 virt-resize --expand /dev/sda3 /root/rhel-8.4-x86_64-kvm.qcow2 service-vm.qcow2 
 virt-customize -a service-vm.qcow2  --run-command 'yum remove cloud-init* -y' --root-password password:redhat
-virt-customize -a service-vm.qcow2  --run-command 'hostnamectl set hostname service-vm.pool5.roskosb.info
 
 virt-customize -a service-vm.qcow2 --run-command 'cat << EOF > /etc/sysconfig/network-scripts/ifcfg-eth0
 DEVICE="eth0"
@@ -30,6 +29,8 @@ virt-install --ram 32000 --vcpus 8 \
 --import --noautoconsole --vnc  \
 --bridge  br-ex \
 --name service-vm
+
+ssh root@service-vm.pool5.roskosb.info 'hostnamectl set-hostname service-vm.pool5.roskosb.info'
 ```
 
 ### Prepare bastion
@@ -39,18 +40,27 @@ git clone https://github.com/redhat-partner-solutions/crucible
 cd crucible
 rm -rf ~/.ansible/collections/  # optional, but recommended as there is no version information specificed in requirements.yml
 ansible-galaxy collection install -r requirements.yml
-
+ssh-copy-id root@infra.pool5.roskosb.info
+ssh-copy-id root@service-vm.pool5.roskosb.info
 ```
 
-###after running crucible playbooks
+### prepare service-vm
+```
+ssh root@service-vm.pool5.roskosb.info
+- register service-vm to cdn or satellite
+dnf install firewalld httpd podman -y
+systemctl enable --now firewalld
+```
+
+### after running crucible playbooks
 ```
 ssh root@infra.pool5.roskosb.info
 
-qemu-img create -f qcow2 /var/lib/libvirt/images/data1.qcow2 100G
-qemu-img create -f qcow2 /var/lib/libvirt/images/data2.qcow2 100G
-qemu-img create -f qcow2 /var/lib/libvirt/images/data3.qcow2 100G
+qemu-img create -f qcow2 /var/lib/libvirt/images/crucible/data1.qcow2 100G
+qemu-img create -f qcow2 /var/lib/libvirt/images/crucible/data2.qcow2 100G
+qemu-img create -f qcow2 /var/lib/libvirt/images/crucible/data3.qcow2 100G
 chown qemu.qemu /var/lib/libvirt/images/data*
-virsh attach-disk super1 /var/lib/libvirt/images/data1.qcow2 --target vdb --persistent --subdriver qcow2
-virsh attach-disk super2 /var/lib/libvirt/images/data2.qcow2 --target vdb --persistent --subdriver qcow2
-virsh attach-disk super3 /var/lib/libvirt/images/data3.qcow2 --target vdb --persistent --subdriver qcow2
+virsh attach-disk super1 /var/lib/libvirt/images/crucible/data1.qcow2 --target vdb --persistent --subdriver qcow2
+virsh attach-disk super2 /var/lib/libvirt/images/crucible/data2.qcow2 --target vdb --persistent --subdriver qcow2
+virsh attach-disk super3 /var/lib/libvirt/images/crucible/data3.qcow2 --target vdb --persistent --subdriver qcow2
 ```
