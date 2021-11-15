@@ -319,7 +319,7 @@ all:
             vm_spec:
               cpu_cores: 12
               ram_mib: 32768
-              disk_size_gb: 50
+              disk_size_gb: 100
           hosts:
             super1:
               ansible_host: 10.1.198.133
